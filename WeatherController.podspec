@@ -9,16 +9,25 @@ Pod::Spec.new do |s|
   s.source   = { :git => 'https://github.com/greenappleball/weather_controller.git', :tag => '0.0.1' }
   s.description = ''
 
-#  s.preferred_dependency = 'Adding'
- # s.subspec 'Adding' do |a|
-    s.dependency 'TBXML'
-    s.dependency 'AFNetworking'
-  #end
+  s.preferred_dependency = 'Addition'
+  s.subspec 'Addition' do |a|
+    a.source_files = 'Classes/Addition/**/*.*'
+  end
   
-  s.source_files = 'Classes/**/*.*'
+  s.subspec 'CustomWeatherClient' do |c|
+    a.source_files = 'Classes/CustomWeatherClient/**/*.*'
+  end
+
+  s.subspec 'Proxy' do |p|
+  end
+  
+  s.source_files = 'Classes/*.*'
   s.resources    = 'Resources/**/*.*'
   s.preserve_paths = 'Resources'
   s.requires_arc = true
   s.frameworks   = 'QuartzCore', 'UIKit' , 'MapKit','Foundation', 'CoreLocation'
+
+  s.dependency 'AFNetworking'
+  s.dependency 'TBXML'
 end
 
