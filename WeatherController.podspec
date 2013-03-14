@@ -12,6 +12,7 @@ Pod::Spec.new do |s|
   s.preferred_dependency = 'Addition'
   s.subspec 'Addition' do |a|
     a.source_files = 'Classes/Addition/**/*.*'
+    a.requires_arc = false
   end
   
   s.subspec 'CustomWeatherClient' do |c|
