@@ -170,3 +170,10 @@
 //   define WWO_UPDATES_TIMEOUT_SEC 60 * 60
 //
 #define WWO_UPDATES_TIMEOUT_SEC 60 * 20 //20 min
+
+//
+// If location is within given distance form the one in the data we do not require update
+// unless timeout occures.
+// (in meters)
+//
+#define DISTANCE_ACCURACY 20000.0f

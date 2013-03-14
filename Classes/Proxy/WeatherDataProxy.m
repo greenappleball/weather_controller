@@ -20,12 +20,8 @@
 	[formatter setDateFormat:ISO8601_UNIX_FORMAT];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
 	
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSDate*)dataFromStrCurTime:(NSString *)aStr{
@@ -34,12 +30,8 @@
 	[formatter setDateFormat:@"HH:mm:ss"];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
 	
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSDate*)localDay:(NSString *)aStr{
@@ -50,12 +42,8 @@
 	[formatter setDateFormat:@"dd MMM yyyy"];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
 	
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSDate*)getDayFromUnixFormat:(NSString *)aStr{
@@ -64,12 +52,8 @@
 	[formatter setDateFormat:ISO8601_UNIX_FORMAT];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
 	
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSDate*)fullLocalDate:(NSString *)aStr{
@@ -79,27 +63,18 @@
 	[formatter setDateFormat:@"EEE, dd MMM yyyy HH:mm:ss"];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
-	
+    
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSDate*)dataFromStr:(NSString*)aStr{
-
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 	NSLocale *prefLoc = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US"];
 	[formatter setDateFormat:@"h:mma"];
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
-	
+    
 	NSDate* sunriseDate = [formatter dateFromString:aStr];
-	
-	[formatter release];
 	return sunriseDate;
 }
 +(NSUInteger)getDayOfWeek:(NSString*)aStr{
@@ -119,14 +94,11 @@
     [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setDateFormat:@"h:mma"];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
-	
-	NSString* now = [formatter stringFromDate:aDay]; 
+    
+	NSString* now = [formatter stringFromDate:aDay];
 	NSDate* nowDate = [formatter dateFromString:now];
-	
-	[formatter release];
     return nowDate;
-
+    
 }
 
 
@@ -140,14 +112,14 @@
     currTime=[self timeSkipDay:currTime];
     sunrise=[self timeSkipDay:sunrise];
     sunset=[self timeSkipDay:sunset];
-
+    
 	NSString* result = kNight;
 	NSInteger oneHour = 3600;
 	NSDate* leftCheck;
 	NSDate* rightCheck;
 	
 	BOOL isOk;
-	//	sunrise(от SR-20m до SR+20m), 
+	//	sunrise(от SR-20m до SR+20m),
 	leftCheck = [sunrise dateByAddingTimeInterval:(-1)*oneHour/2];
 	rightCheck = [sunrise dateByAddingTimeInterval:1*oneHour/2];
 	isOk = (NSOrderedSame == [currTime compare:leftCheck] || (NSOrderedDescending == [currTime compare:leftCheck] &&
@@ -157,7 +129,7 @@
         return result;
 	}
     
-	//	sunset(SS-20h — SS+20m), 
+	//	sunset(SS-20h — SS+20m),
 	leftCheck = [sunset dateByAddingTimeInterval:(-1)*oneHour/2];
 	rightCheck = [sunset dateByAddingTimeInterval:oneHour/2];
 	isOk = (NSOrderedSame == [currTime compare:leftCheck] || (NSOrderedDescending == [currTime compare:leftCheck] &&
@@ -166,7 +138,7 @@
 		result = kSunChange;
         return result;
 	}
-	//	day(SR — SS), 
+	//	day(SR — SS),
 	leftCheck = sunrise;
 	rightCheck = sunset;
 	isOk = (NSOrderedSame == [currTime compare:leftCheck] || (NSOrderedDescending == [currTime compare:leftCheck] &&
@@ -178,26 +150,25 @@
 	return result;
 }
 + (BOOL) checkIsDay:(NSDate*)currTime WithSunrise:(NSDate*)sunrise withSunset:(NSDate*)sunset{
-	//	day(SR — SS), 
+	//	day(SR — SS),
     currTime=[self timeSkipDay:currTime];
     sunrise=[self timeSkipDay:sunrise];
     sunset=[self timeSkipDay:sunset];
 	BOOL isOk = (NSOrderedSame == [currTime compare:sunrise] || (NSOrderedDescending == [currTime compare:sunrise] &&
-                                                              NSOrderedAscending == [currTime compare:sunset]));
-
+                                                                 NSOrderedAscending == [currTime compare:sunset]));
+    
 	return isOk;
-
+    
 }
 + (NSDate*) sunriseFromData:(NSDictionary*)data {
-	NSDateFormatter* formatter = [[[NSDateFormatter alloc] init] autorelease];
+	NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 	NSLocale *prefLoc = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US"];
 	[formatter setDateFormat:@"h:mma"];
     //[formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
 	
 	NSString* sunrise = [data objectForKey:WEATHER_KEY_SUNRISE];
-     return  [self dataFromStr:sunrise];
+    return  [self dataFromStr:sunrise];
     NSString* timezoneStr=[data objectForKey:PLACE_KEY_TIMEZONE];
     NSTimeZone *timeZone=[NSTimeZone timeZoneWithName:timezoneStr];
     [formatter setTimeZone:timeZone];
@@ -220,12 +191,11 @@
 }
 
 + (NSDate*) sunsetFromData:(NSDictionary*)data {
-	NSDateFormatter* formatter = [[[NSDateFormatter alloc] init] autorelease];
+	NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 	NSLocale *prefLoc = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US"];
 	[formatter setDateFormat:@"h:mma"];
-     //  [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
+    //  [formatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	[formatter setLocale:prefLoc];
-	[prefLoc release];
 	
 	NSString* sunset = [data objectForKey:WEATHER_KEY_SUNSET];
     return  [self dataFromStr:sunset];
@@ -278,11 +248,11 @@
 	NSNumber* numKey = [NSNumber numberWithInt:[precipDeskr intValue]];
 	int key = [numKey intValue];
 	if (0 != key) {
-		if ((key>=1 && key<=27) || (key==31) || 
+		if ((key>=1 && key<=27) || (key==31) ||
 			(key>=50 && key<=55) || (key>=63 && key<=70)) {
 			result = kRain;
 		}
-		if ((key>=28 && key<=30) || (key>=32 && key<=49) || 
+		if ((key>=28 && key<=30) || (key>=32 && key<=49) ||
 			(key>=41 && key<=49) || (key>=56 && key<=62)
 			|| (key>=71 && key<=77)) {
 			result = kSnow;
@@ -293,7 +263,7 @@
 
 + (NSString*) getVideoForWeather:(NSString*)aWeather timeOfDay:(NSString*)aTimeOfDay{
     NSString *result=[NSString stringWithFormat:@"%@_%@",kDay, kBluesky];
-    //если день, то всё прозрачно 
+    //если день, то всё прозрачно
     if (![aTimeOfDay isEqualToString:kDay]) { // если ночь или закат/рассвет
         if ([aWeather isEqualToString:kPartlycloudy]) {
             aWeather=kBluesky; // если маля облачность то показываем чистое небо
@@ -302,7 +272,7 @@
             aWeather=kCloudy;
         }
     }
-     result=[NSString stringWithFormat:@"%@_%@",aTimeOfDay, aWeather];
+    result=[NSString stringWithFormat:@"%@_%@",aTimeOfDay, aWeather];
     return  result;
 }
 

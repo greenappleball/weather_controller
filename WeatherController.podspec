@@ -17,10 +17,18 @@ Pod::Spec.new do |s|
   s.subspec 'CustomWeatherClient' do |c|
     c.source_files = 'Classes/CustomWeatherClient/**/*.*'
   end
-  
+
+  s.subspec 'Proxy' do |p|
+    p.source_files = 'Classes/Proxy/**/*.*'
+  end
+
+  s.subspec 'UI' do |u|
+    u.source_files = 'Classes/UI/**/*.*'
+  end
+
   s.source_files = 'Classes/*.*'
   s.resources    = 'Resources/**/*.*'
-  s.preserve_paths = 'Resources', 'Classes'
+  s.preserve_paths = 'Resources'
   s.requires_arc = true
   s.frameworks   = 'QuartzCore', 'UIKit' , 'MapKit','Foundation', 'CoreLocation'
 
