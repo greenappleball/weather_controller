@@ -165,3 +165,8 @@
 // Use this prefix for filenames (data, preferences, etc)
 //
 #define FILE_PREFIX @"WeatherClock_"
+
+//
+//   define WWO_UPDATES_TIMEOUT_SEC 60 * 60
+//
+#define WWO_UPDATES_TIMEOUT_SEC 60 * 20 //20 min

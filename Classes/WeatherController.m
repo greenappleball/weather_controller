@@ -7,7 +7,7 @@
 //
 
 
-#import "SettingsManager.h"
+//#import "SettingsManager.h"
 #import "WeatherController.h"
 #import "CustomWeatherConts.h"
 #import "CustomWeatherClient.h"
@@ -122,10 +122,8 @@
 - (BOOL) canParseLocation:(CLLocation*)location{
     BOOL canParse = YES;
     if((fabs(location.coordinate.latitude) < 0.1) && (fabs(location.coordinate.longitude) < 0.1)) {
-        if (!isAlertShown()) {
-            SAFE_DELEGATE_CALL(self.bpcDelegate,showCitySearch);
-            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:LocalizedString(@"No Location") message:LocalizedString(@"No Location Body") delegate:nil cancelButtonTitle:LocalizedString(@"Cancel") otherButtonTitles:nil];
-            [alert show];
+        if ([self.bpcDelegate respondsToSelector:@selector(showCitySearch)]) {
+            [self.bpcDelegate showCitySearch];
         }
         canParse = NO;
     }
@@ -139,10 +137,10 @@
     
     /*
      // now we don't need this stack of code
-    if (![self canParseLocation:location]) {
-        return;
-    }
-    */
+     if (![self canParseLocation:location]) {
+     return;
+     }
+     */
     
     BOOL isOk = (placemark != nil && error == nil);
     
@@ -156,7 +154,7 @@
                     cityStr, PLACE_KEY_CITY,
                     regionStr, PLACE_KEY_REGION,
                     timezoneName, PLACE_KEY_TIMEZONE,
-                    [NSNumber numberWithDouble:location.coordinate.latitude], PLACE_KEY_LATITUDE, 
+                    [NSNumber numberWithDouble:location.coordinate.latitude], PLACE_KEY_LATITUDE,
                     [NSNumber numberWithDouble:location.coordinate.longitude], PLACE_KEY_LONGITUDE, nil];
     
     if (self.data == nil) {
@@ -293,7 +291,7 @@ static WeatherController *sharedController;
 				[self updateWeatherWithScheduledPlace];
 			} else {
 				NSDate *updateTime = [NSDate dateWithTimeIntervalSinceNow:(WWO_UPDATES_TIMEOUT_SEC + isNeedUpdate)];
-				scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime														  
+				scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
 														  interval:WWO_UPDATES_TIMEOUT_SEC
 															target:self
 														  selector:@selector(updateWeatherWithScheduledPlace)
@@ -400,7 +398,7 @@ static WeatherController *sharedController;
     } else {
         [self updateWeatherWithScheduledPlace];
     }
-//    [self startSchedulingWeather];
+    //    [self startSchedulingWeather];
 }
 
 - (void)searchPlacesForQuery:(NSString*)aQuery {
@@ -415,7 +413,7 @@ static WeatherController *sharedController;
 		[self saveToFile];
 	}
 	[[SettingsManager instance] saveSettingsValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:PREF_KEY_PLACE_IDX];
-
+    
 	[self startSchedulingWeather];
 }
 
@@ -484,7 +482,7 @@ static WeatherController *sharedController;
 #pragma mark CLLocationManager delegate methods
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
-        
+    
     CLLocationDistance distance = [self.currentLocation distanceFromLocation:newLocation];
     BOOL requiresUpdate = (nil==self.currentLocation || distance >= DISTANCE_ACCURACY);
     
@@ -542,7 +540,7 @@ static WeatherController *sharedController;
 		self.data = [NSMutableDictionary dictionaryWithDictionary:tmpWeather];
 		NSDate *updateTime = [NSDate dateWithTimeIntervalSinceNow:WWO_UPDATES_TIMEOUT_SEC];
 		[self stopSchedulingWeather];
-		scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime														  
+		scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
 												  interval:0
 													target:self
 												  selector:@selector(updateWeatherForCurrentLocation)
