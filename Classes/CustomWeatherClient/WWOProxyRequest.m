@@ -518,84 +518,85 @@
 
 - (void)parseWeatherWithResponseString:(NSString *)responseString
 {
-    TBXML *xml = [TBXML tbxmlWithXMLString:responseString];
-	NSError *error = nil;
 	id res = nil;
-	
-	switch (self.type) {
-		case prCitiesRequest:
-			res = [self parseCitiesFromXML:xml.rootXMLElement];
-			_state = prCompleted;
-			break;
-		case prWeatherByLocRequest:
-		{
-			switch (self.state) {
-				case prUnknown:
-					res = [self parseCurrentConditionFromXML:xml.rootXMLElement];
-					_state = prWeatherCurrentConditionComplete;
-					if (res == nil) {
-						break;
-					}
-					if (_data == nil) {
-						_data = [NSMutableDictionary dictionary];
-					}
-					[_data setObject:res forKey:WEATHER_KEY_CURRENT_CONDITION];
-					res = _data;
-					break;
-				case prWeatherCurrentConditionComplete:
-					res = [self parseAstronomyForecastFromXML:xml.rootXMLElement];
-					if (res == nil) {
-						break;
-					}
-					if (_data == nil) {
-						_data = [NSMutableDictionary dictionary];
-					}
-					[_data setObject:res forKey:WEATHER_KEY_ASTRONOMY];
-					res = _data;
-					_state = prWeatherAstronomyForcastComplete;
-					break;
-				case prWeatherAstronomyForcastComplete:
-					res = [self addNowDay:[self parseExtendedForecastFromXML:xml.rootXMLElement ]];
-					if (res == nil) {
-						break;
-					}
-					if (_data == nil) {
-						_data = [NSMutableDictionary dictionary];
-					}
-					[_data setObject:res forKey:WEATHER_KEY_EXTENDED_CONDITION];
-					res = _data;
-					_state = prWeatherExtendedForcastComplete;
-					break;
-				case prWeatherExtendedForcastComplete:
-					res = [self parseDetailedForecastFromXML:xml.rootXMLElement];
-					if (res == nil) {
-						break;
-					}
-					if (_data == nil) {
-						_data = [NSMutableDictionary dictionary];
-					}
-					[_data setObject:res forKey:WEATHER_KEY_DETAILED_FORECAST];
-					if ([_data objectForKey:WEATHER_KEY_CURRENT_CONDITION] == nil) {
-                        id value = nil;
-						if ([res count] > 0) {
-                            value = [[res objectAtIndex:0] objectAtIndex:0];
-						} else {
-							value = [[WWOProxy iconsMapping] objectForKey:DEFAULT_DESCRIPTORS_KEY];
-						}
-                        [_data setObject:(nil != value ? value : @"") forKey:WEATHER_KEY_CURRENT_CONDITION];
-					}
-					res = _data;
-					_state = prCompleted;
-					break;
-				default:
-					_state = prUnknown;
-					break;
-			}
-		}
-			break;
-		default:
-			break;
-	}
+	NSError *error = nil;
+    TBXML *xml = [TBXML tbxmlWithXMLString:responseString error:&error];
+	if (nil == error) {
+        switch (self.type) {
+            case prCitiesRequest:
+                res = [self parseCitiesFromXML:xml.rootXMLElement];
+                _state = prCompleted;
+                break;
+            case prWeatherByLocRequest:
+            {
+                switch (self.state) {
+                    case prUnknown:
+                        res = [self parseCurrentConditionFromXML:xml.rootXMLElement];
+                        _state = prWeatherCurrentConditionComplete;
+                        if (res == nil) {
+                            break;
+                        }
+                        if (_data == nil) {
+                            _data = [NSMutableDictionary dictionary];
+                        }
+                        [_data setObject:res forKey:WEATHER_KEY_CURRENT_CONDITION];
+                        res = _data;
+                        break;
+                    case prWeatherCurrentConditionComplete:
+                        res = [self parseAstronomyForecastFromXML:xml.rootXMLElement];
+                        if (res == nil) {
+                            break;
+                        }
+                        if (_data == nil) {
+                            _data = [NSMutableDictionary dictionary];
+                        }
+                        [_data setObject:res forKey:WEATHER_KEY_ASTRONOMY];
+                        res = _data;
+                        _state = prWeatherAstronomyForcastComplete;
+                        break;
+                    case prWeatherAstronomyForcastComplete:
+                        res = [self addNowDay:[self parseExtendedForecastFromXML:xml.rootXMLElement ]];
+                        if (res == nil) {
+                            break;
+                        }
+                        if (_data == nil) {
+                            _data = [NSMutableDictionary dictionary];
+                        }
+                        [_data setObject:res forKey:WEATHER_KEY_EXTENDED_CONDITION];
+                        res = _data;
+                        _state = prWeatherExtendedForcastComplete;
+                        break;
+                    case prWeatherExtendedForcastComplete:
+                        res = [self parseDetailedForecastFromXML:xml.rootXMLElement];
+                        if (res == nil) {
+                            break;
+                        }
+                        if (_data == nil) {
+                            _data = [NSMutableDictionary dictionary];
+                        }
+                        [_data setObject:res forKey:WEATHER_KEY_DETAILED_FORECAST];
+                        if ([_data objectForKey:WEATHER_KEY_CURRENT_CONDITION] == nil) {
+                            id value = nil;
+                            if ([res count] > 0) {
+                                value = [[res objectAtIndex:0] objectAtIndex:0];
+                            } else {
+                                value = [[WWOProxy iconsMapping] objectForKey:DEFAULT_DESCRIPTORS_KEY];
+                            }
+                            [_data setObject:(nil != value ? value : @"") forKey:WEATHER_KEY_CURRENT_CONDITION];
+                        }
+                        res = _data;
+                        _state = prCompleted;
+                        break;
+                    default:
+                        _state = prUnknown;
+                        break;
+                }
+            }
+                break;
+            default:
+                break;
+        }
+    }
 	
 	if (_state != prUnknown) {
 		_data = res;
