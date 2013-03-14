@@ -7,7 +7,6 @@
 //
 
 
-//#import "SettingsManager.h"
 #import "WeatherController.h"
 #import "CustomWeatherConts.h"
 #import "CustomWeatherClient.h"
@@ -16,16 +15,16 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
-@interface WeatherController()
+@interface WeatherController() <CLLocationManagerDelegate>
 
+@property (nonatomic, strong) WeatherControllerSettingsTableView *settingsController;
+@property (nonatomic, strong) SearchPlaceViewController *searchCotroller;
+@property (nonatomic, strong) NSMutableDictionary *weatherSettings;
 @property (nonatomic, strong) NSMutableArray *weatherCache;
 @property (nonatomic, strong) CLLocationManager* locationManager;
 @property (nonatomic, strong) CLLocation *currentLocation;
 @property (nonatomic, strong) id reverseGeocoder;
-
-@end
-
-@interface WeatherController(Private)
+@property (nonatomic, strong) NSTimer *scheduledTimer;
 
 - (void)saveToFile;
 
@@ -47,10 +46,48 @@
 
 @end
 
-@implementation WeatherController(Private)
+@implementation WeatherController
+
+@synthesize delegate;
+@synthesize scheduledPlaceIdx;
+@synthesize weatherCache;
+@synthesize data = _data;
+@synthesize currentLocation;
+@synthesize bpcDelegate;
+@synthesize locationManager, reverseGeocoder;
+
+#pragma mark - Accesories
+
+- (NSMutableDictionary *)weatherSettings
+{
+    if (nil == _weatherSettings) {
+        if ([[NSFileManager defaultManager] fileExistsAtPath:[self dataFilePath]]) {
+            _weatherSettings = [[NSDictionary dictionaryWithContentsOfFile:[self dataFilePath]] mutableCopy];
+        }
+        if (nil == _weatherSettings) {
+            _weatherSettings = [[NSMutableDictionary alloc] init];
+        }
+    }
+    return _weatherSettings;
+}
+
+- (NSMutableArray *)weatherCache
+{
+    if (nil == weatherCache) {
+        weatherCache = [self.weatherSettings[kWeatherCache] mutableCopy];
+        if (nil == weatherCache) {
+			weatherCache = [NSMutableArray array];
+        }
+    }
+    return weatherCache;
+}
+
+#pragma mark - Private
 
 - (void)saveToFile {
-	[self.weatherCache writeToFile:[self dataFilePath] atomically:NO];
+    [self.weatherSettings setValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:kPlaceIdx];
+    [self.weatherSettings setValue:self.weatherCache forKey:kWeatherCache];
+    [self.weatherSettings writeToFile:[self dataFilePath] atomically:NO];
 }
 
 - (NSString*)dataFilePath {
@@ -133,7 +170,7 @@
 - (void)parseGeocoderPlace:(MKPlacemark*)placemark error:(NSError*)error {
     NSDictionary *currentPlace;
     
-    CLLocation* location = (getDeviceVersion() < 5.0)?self.currentLocation:placemark.location;
+    CLLocation* location = nil == placemark ? self.currentLocation : placemark.location;
     
     /*
      // now we don't need this stack of code
@@ -157,11 +194,11 @@
                     [NSNumber numberWithDouble:location.coordinate.latitude], PLACE_KEY_LATITUDE,
                     [NSNumber numberWithDouble:location.coordinate.longitude], PLACE_KEY_LONGITUDE, nil];
     
-    if (self.data == nil) {
-        self.data = [NSMutableDictionary dictionary];
+    if (_data == nil) {
+        _data = [NSMutableDictionary dictionary];
     }
     
-    [self.data setObject:currentPlace forKey:WEATHER_KEY_PLACE];
+    [_data setObject:currentPlace forKey:WEATHER_KEY_PLACE];
     
     if (scheduledPlaceIdx == AUTOMATIC_IDX) {
         float lat = [[currentPlace objectForKey:PLACE_KEY_LATITUDE] floatValue];
@@ -170,27 +207,10 @@
     }
 }
 
-@end
-
-@implementation WeatherController
-@synthesize delegate;
-@synthesize scheduledPlaceIdx;
-@synthesize weatherCache;
-@synthesize data;
-@synthesize currentLocation;
-@synthesize bpcDelegate;
-@synthesize locationManager, reverseGeocoder;
-
 - (id)init {
 	if ((self = [super init])) {
 		[WWOProxy setDelegate:self];
-		scheduledPlaceIdx = [[[SettingsManager instance] objectForKey:PREF_KEY_PLACE_IDX] intValue];
-		if ([[NSFileManager defaultManager] fileExistsAtPath:[self dataFilePath]]) {
-			self.weatherCache = [NSMutableArray arrayWithArray:[NSArray arrayWithContentsOfFile:[self dataFilePath]]];
-		} else {
-			self.weatherCache = [NSMutableArray array];
-		}
-		
+		scheduledPlaceIdx = [self.weatherSettings[kPlaceIdx] intValue];
 		
 		if ([self.weatherCache count] <= scheduledPlaceIdx) {
 			scheduledPlaceIdx = AUTOMATIC_IDX;
@@ -216,13 +236,13 @@
 	[self releaseLocationManager];
     
     self.reverseGeocoder = nil;
-	[searchCotroller cancel:nil];
-	searchCotroller = nil;
-	settingsController = nil;
+	[_searchCotroller cancel:nil];
+	_searchCotroller = nil;
+	_settingsController = nil;
 	[self.weatherCache removeAllObjects];
 	self.weatherCache = nil;
     self.bpcDelegate = nil;
-	self.data = nil;
+	_data = nil;
 	[WWOProxy end];
 }
 
@@ -269,14 +289,14 @@ static WeatherController *sharedController;
 		[self.locationManager stopUpdatingLocation];
 		[self releaseRverseGeocoder];
 	}
-	if (scheduledTimer != nil) {
-		[scheduledTimer invalidate];
-		scheduledTimer = nil;
+	if (_scheduledTimer != nil) {
+		[_scheduledTimer invalidate];
+		_scheduledTimer = nil;
 	}
 }
 
 - (void)startSchedulingWeather {
-	if (scheduledTimer == nil || ![scheduledTimer isValid]) {
+	if (_scheduledTimer == nil || ![_scheduledTimer isValid]) {
 	} else {
 		return;
 	}
@@ -291,14 +311,14 @@ static WeatherController *sharedController;
 				[self updateWeatherWithScheduledPlace];
 			} else {
 				NSDate *updateTime = [NSDate dateWithTimeIntervalSinceNow:(WWO_UPDATES_TIMEOUT_SEC + isNeedUpdate)];
-				scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
-														  interval:WWO_UPDATES_TIMEOUT_SEC
-															target:self
-														  selector:@selector(updateWeatherWithScheduledPlace)
-														  userInfo:nil
-														   repeats:YES];
-				[[NSRunLoop currentRunLoop] addTimer:scheduledTimer forMode:NSDefaultRunLoopMode];
-				self.data = weather;
+				_scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
+                                                           interval:WWO_UPDATES_TIMEOUT_SEC
+                                                             target:self
+                                                           selector:@selector(updateWeatherWithScheduledPlace)
+                                                           userInfo:nil
+                                                            repeats:YES];
+				[[NSRunLoop currentRunLoop] addTimer:_scheduledTimer forMode:NSDefaultRunLoopMode];
+				_data = weather;
 				[self sentMsgToDelegate:wpWeatherIsUpdated];
 				//scheduledTimer = [NSTimer scheduledTimerWithTimeInterval:-isNeedUpdate target:self selector:@selector(upadateWeatherWithScheduledPlace) userInfo:nil repeats:YES];
 			}
@@ -314,35 +334,27 @@ static WeatherController *sharedController;
 	
 }
 
-- (void)setSearchController:(SearchPlaceViewController *)searchController {
-	self->searchCotroller = searchController;
-}
-
 - (SearchPlaceViewController*)searchViewController {
-	if (searchCotroller == nil) {
-		searchCotroller = [[SearchPlaceViewController alloc] init];
-		[searchCotroller setDelegate:self];
+	if (_searchCotroller == nil) {
+		_searchCotroller = [[SearchPlaceViewController alloc] init];
+		[_searchCotroller setDelegate:self];
 	}
 	
-	return searchCotroller;
+	return _searchCotroller;
 }
 
 - (WeatherControllerSettingsTableView*)settingsViewController {
-	if (settingsController == nil) {
-		settingsController = [[WeatherControllerSettingsTableView alloc] init];
+	if (_settingsController == nil) {
+		_settingsController = [[WeatherControllerSettingsTableView alloc] init];
 	}
 	
 	NSMutableArray *places = [NSMutableArray array];
 	for (NSDictionary *weather in weatherCache) {
 		[places addObject:[weather objectForKey:WEATHER_KEY_PLACE]];
 	}
-	[settingsController setPlaces:places];
-	[settingsController setDelegate:self];
-	return settingsController;
-}
-
-- (NSDictionary*)data {
-	return data;
+	[_settingsController setPlaces:places];
+	[_settingsController setDelegate:self];
+	return _settingsController;
 }
 
 - (void)updateWeatherForCurrentLocation {
@@ -356,7 +368,7 @@ static WeatherController *sharedController;
 		
 	} else {
 		self.locationManager = [[CLLocationManager alloc] init];
-		if ([self.locationManager locationServicesEnabled_Resolved]) {
+		if ([CLLocationManager locationServicesEnabled]) {
 			
 			//[self performSelector:@selector(asyncUpdateLocation) withObject:nil afterDelay:0.5];
 			
@@ -410,9 +422,8 @@ static WeatherController *sharedController;
 	scheduledPlaceIdx = [self placeIdxInCache:aPlace];
 	if (scheduledPlaceIdx == NSNotFound) {
 		scheduledPlaceIdx = [self addPlaceToCache:aPlace];
-		[self saveToFile];
+        [self saveToFile];
 	}
-	[[SettingsManager instance] saveSettingsValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:PREF_KEY_PLACE_IDX];
     
 	[self startSchedulingWeather];
 }
@@ -452,8 +463,8 @@ static WeatherController *sharedController;
 		[self sentMsgToDelegate:wpWeatherWillUpdate];
 		[self stopSchedulingWeather];
 		scheduledPlaceIdx = AUTOMATIC_IDX;
-		[[SettingsManager instance] saveSettingsValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:PREF_KEY_PLACE_IDX];
-		self.data = nil;
+        [self saveToFile];
+		_data = nil;
 		[self startSchedulingWeather];
 	}
 }
@@ -471,7 +482,7 @@ static WeatherController *sharedController;
 	} else {
 		[self stopSchedulingWeather];
 		[self removePlaceFromCache:aPlace];
-		[self setCurrentPlace:[self.data objectForKey:WEATHER_KEY_PLACE]];
+		[self setCurrentPlace:[_data objectForKey:WEATHER_KEY_PLACE]];
 		[self startSchedulingWeather];
 	}
 	
@@ -505,8 +516,8 @@ static WeatherController *sharedController;
 				break;
 			case kCLErrorLocationUnknown:
 			default:
-				if (self.data != nil) {
-					NSDate *updDate = [self.data objectForKey:@"updated"];
+				if (_data != nil) {
+					NSDate *updDate = [_data objectForKey:@"updated"];
 					if (updDate != nil) {
 						NSTimeInterval oldSec = -[updDate timeIntervalSinceDate:[NSDate date]];
 						int isNeedUpdate = oldSec - WWO_UPDATES_TIMEOUT_SEC;
@@ -535,23 +546,24 @@ static WeatherController *sharedController;
 - (void)weatherProxy:(id)sender transferedData:(NSDictionary*)aData {
 	if (scheduledPlaceIdx == AUTOMATIC_IDX) {
 		NSMutableDictionary *tmpWeather = [NSMutableDictionary dictionaryWithDictionary:aData];
-		[tmpWeather setObject:SAFE_VALUE([data objectForKey:WEATHER_KEY_PLACE]) forKey:WEATHER_KEY_PLACE];
+        id value = [_data objectForKey:WEATHER_KEY_PLACE];
+		[tmpWeather setObject:(nil != value ? value : @"") forKey:WEATHER_KEY_PLACE];
 		[tmpWeather setObject:[NSDate date] forKey:@"updated"];
-		self.data = [NSMutableDictionary dictionaryWithDictionary:tmpWeather];
+		_data = [NSMutableDictionary dictionaryWithDictionary:tmpWeather];
 		NSDate *updateTime = [NSDate dateWithTimeIntervalSinceNow:WWO_UPDATES_TIMEOUT_SEC];
 		[self stopSchedulingWeather];
-		scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
-												  interval:0
-													target:self
-												  selector:@selector(updateWeatherForCurrentLocation)
-												  userInfo:nil
-												   repeats:NO];
-		[[NSRunLoop currentRunLoop] addTimer:scheduledTimer forMode:NSDefaultRunLoopMode];
+		_scheduledTimer = [[NSTimer alloc] initWithFireDate:updateTime
+                                                   interval:0
+                                                     target:self
+                                                   selector:@selector(updateWeatherForCurrentLocation)
+                                                   userInfo:nil
+                                                    repeats:NO];
+		[[NSRunLoop currentRunLoop] addTimer:_scheduledTimer forMode:NSDefaultRunLoopMode];
 	} else {
 		NSMutableDictionary *weather = [self.weatherCache objectAtIndex:scheduledPlaceIdx];
 		[weather addEntriesFromDictionary:aData];
 		[weather setObject:[NSDate date] forKey:@"updated"];
-		self.data = weather;
+		_data = weather;
 		
 		[self saveToFile];
 		[self startSchedulingWeather];
@@ -565,8 +577,8 @@ static WeatherController *sharedController;
 }
 
 - (void)weatherProxy:(id)sender findedCities:(NSArray*)theCities {
-	if (searchCotroller != nil){
-		[searchCotroller setFoundPlaces:theCities];
+	if (_searchCotroller != nil){
+		[_searchCotroller setFoundPlaces:theCities];
 	}
 }
 
@@ -578,10 +590,14 @@ static WeatherController *sharedController;
 	switch ([currentNetworkStatus integerValue]) {
 		case AFNetworkReachabilityStatusUnknown:
 		case AFNetworkReachabilityStatusNotReachable:
-			DLog(@"NotReachable");
+#ifdef DEBUG
+			NSLog(@"NotReachable");
+#endif
 		case AFNetworkReachabilityStatusReachableViaWWAN:
 		case AFNetworkReachabilityStatusReachableViaWiFi:
-			DLog(@"ReachableViaWiFi");
+#ifdef DEBUG
+			NSLog(@"ReachableViaWiFi");
+#endif
 			if (scheduledPlaceIdx == AUTOMATIC_IDX) {
 				[self updateWeatherForCurrentLocation];
 			} else {

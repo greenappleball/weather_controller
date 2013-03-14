@@ -19,6 +19,9 @@
 
 @interface WWOProxyRequest ()
 
+@property (nonatomic, strong) id data;
+@property (nonatomic, strong) NSError *requestError;
+
 @end
 
 
@@ -26,19 +29,13 @@
 
 @implementation WWOProxyRequest
 
-@synthesize data;
-@synthesize state;
-@synthesize type;
-@synthesize requestError;
-@synthesize longitude;
-@synthesize latitude;
 
 #pragma mark -
 
 - (void)dealloc {
-	self.data = nil;
-	self.requestError = nil;
-    self.delegate = nil;
+	_data = nil;
+    _delegate = nil;
+	_requestError = nil;
 }
 
 #pragma mark - Private
@@ -50,6 +47,10 @@
     } else {
         [self requestFailed:error];
     }
+    
+    if ([self.delegate respondsToSelector:@selector(didCompleteWWORequest:)]) {
+        [self.delegate didCompleteWWORequest:self];
+    }
 }
 
 #pragma mark - Public
@@ -58,7 +59,7 @@
 {
 	if ((self = [super init])) {
 		_delegate = delegate;
-		state = prUnknown;
+		_state = prUnknown;
 	}
 	
 	return self;
@@ -67,7 +68,7 @@
 - (void)getWeather
 {
     __weak __typeof(&*self)weakSelf = self;
-    [CustomWeatherRequests weatherWithWWORequest:weakSelf completionBlock:^(id responseData, NSError *error) {
+    [CustomWeatherRequests weatherWithWWORequest:self completionBlock:^(id responseData, NSError *error) {
         [weakSelf handleByResponse:responseData error:error];
     }];
 }
@@ -75,7 +76,7 @@
 - (void)getWeatherDetailForecast
 {
     __weak __typeof(&*self)weakSelf = self;
-    [CustomWeatherRequests detailForecastWithWWORequest:weakSelf completionBlock:^(id responseData, NSError *error) {
+    [CustomWeatherRequests detailForecastWithWWORequest:self completionBlock:^(id responseData, NSError *error) {
         [weakSelf handleByResponse:responseData error:error];
     }];
 }
@@ -83,7 +84,7 @@
 - (void)getWeatherExtendedForecast
 {
     __weak __typeof(&*self)weakSelf = self;
-    [CustomWeatherRequests extendedForecastWithWWORequest:weakSelf completionBlock:^(id responseData, NSError *error) {
+    [CustomWeatherRequests extendedForecastWithWWORequest:self completionBlock:^(id responseData, NSError *error) {
         [weakSelf handleByResponse:responseData error:error];
     }];
 }
@@ -91,7 +92,7 @@
 - (void)getWeatherAstronomyForecast
 {
     __weak __typeof(&*self)weakSelf = self;
-    [CustomWeatherRequests astronomyForecastWithWWORequest:weakSelf completionBlock:^(id responseData, NSError *error) {
+    [CustomWeatherRequests astronomyForecastWithWWORequest:self completionBlock:^(id responseData, NSError *error) {
         [weakSelf handleByResponse:responseData error:error];
     }];
 }
@@ -100,7 +101,7 @@
 {
     __weak __typeof(&*self)weakSelf = self;
     self.search = [name stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    [CustomWeatherRequests cityWithWWORequest:weakSelf completionBlock:^(id responseData, NSError *error) {
+    [CustomWeatherRequests cityWithWWORequest:self completionBlock:^(id responseData, NSError *error) {
         [weakSelf handleByResponse:responseData error:error];
     }];
 }
@@ -447,7 +448,6 @@
     //        dayOfWeek++;
     //    }
 	NSString *startDayOfWeek = [NSString stringWithFormat:@"%i", dayOfWeek];
-	DLog(@"day name %@ number %d", ltString,dayOfWeek);
     //WEATHER_KEY_EXTENDED_CONDITION
 	TBXMLElement *location = [TBXML childElementNamed:CW_LOCATION_XML parentElement:xmlRoot];
 	TBXMLElement *forecast = [TBXML childElementNamed:CW_FORECAST_XML parentElement:location];
@@ -525,69 +525,70 @@
 	switch (self.type) {
 		case prCitiesRequest:
 			res = [self parseCitiesFromXML:xml.rootXMLElement];
-			state = prCompleted;
+			_state = prCompleted;
 			break;
 		case prWeatherByLocRequest:
 		{
 			switch (self.state) {
 				case prUnknown:
 					res = [self parseCurrentConditionFromXML:xml.rootXMLElement];
-					state = prWeatherCurrentConditionComplete;
+					_state = prWeatherCurrentConditionComplete;
 					if (res == nil) {
 						break;
 					}
-					if (data == nil) {
-						self.data = [NSMutableDictionary dictionary];
+					if (_data == nil) {
+						_data = [NSMutableDictionary dictionary];
 					}
-					[data setObject:res forKey:WEATHER_KEY_CURRENT_CONDITION];
-					res = data;
+					[_data setObject:res forKey:WEATHER_KEY_CURRENT_CONDITION];
+					res = _data;
 					break;
 				case prWeatherCurrentConditionComplete:
 					res = [self parseAstronomyForecastFromXML:xml.rootXMLElement];
 					if (res == nil) {
 						break;
 					}
-					if (data == nil) {
-						self.data = [NSMutableDictionary dictionary];
+					if (_data == nil) {
+						_data = [NSMutableDictionary dictionary];
 					}
-					[data setObject:res forKey:WEATHER_KEY_ASTRONOMY];
-					res = data;
-					state = prWeatherAstronomyForcastComplete;
+					[_data setObject:res forKey:WEATHER_KEY_ASTRONOMY];
+					res = _data;
+					_state = prWeatherAstronomyForcastComplete;
 					break;
 				case prWeatherAstronomyForcastComplete:
 					res = [self addNowDay:[self parseExtendedForecastFromXML:xml.rootXMLElement ]];
 					if (res == nil) {
 						break;
 					}
-					if (data == nil) {
-						self.data = [NSMutableDictionary dictionary];
+					if (_data == nil) {
+						_data = [NSMutableDictionary dictionary];
 					}
-					[data setObject:res forKey:WEATHER_KEY_EXTENDED_CONDITION];
-					res = data;
-					state = prWeatherExtendedForcastComplete;
+					[_data setObject:res forKey:WEATHER_KEY_EXTENDED_CONDITION];
+					res = _data;
+					_state = prWeatherExtendedForcastComplete;
 					break;
 				case prWeatherExtendedForcastComplete:
 					res = [self parseDetailedForecastFromXML:xml.rootXMLElement];
 					if (res == nil) {
 						break;
 					}
-					if (data == nil) {
-						self.data = [NSMutableDictionary dictionary];
+					if (_data == nil) {
+						_data = [NSMutableDictionary dictionary];
 					}
-					[data setObject:res forKey:WEATHER_KEY_DETAILED_FORECAST];
-					if ([data objectForKey:WEATHER_KEY_CURRENT_CONDITION] == nil) {
+					[_data setObject:res forKey:WEATHER_KEY_DETAILED_FORECAST];
+					if ([_data objectForKey:WEATHER_KEY_CURRENT_CONDITION] == nil) {
+                        id value = nil;
 						if ([res count] > 0) {
-							[data setObject:SAFE_VALUE([[res objectAtIndex:0] objectAtIndex:0]) forKey:WEATHER_KEY_CURRENT_CONDITION];
+                            value = [[res objectAtIndex:0] objectAtIndex:0];
 						} else {
-							[data setObject:SAFE_VALUE([[WWOProxy iconsMapping] objectForKey:DEFAULT_DESCRIPTORS_KEY]) forKey:WEATHER_KEY_CURRENT_CONDITION];
+							value = [[WWOProxy iconsMapping] objectForKey:DEFAULT_DESCRIPTORS_KEY];
 						}
-                        
+                        [_data setObject:(nil != value ? value : @"") forKey:WEATHER_KEY_CURRENT_CONDITION];
 					}
-					res = data;
-					state = prCompleted;
+					res = _data;
+					_state = prCompleted;
 					break;
 				default:
-					state = prUnknown;
+					_state = prUnknown;
 					break;
 			}
 		}
@@ -596,14 +597,12 @@
 			break;
 	}
 	
-	if (self.state != prUnknown) {
-		self.data = res;
+	if (_state != prUnknown) {
+		_data = res;
 	} else {
-		self.requestError = error;
-		state = prError;
+		_requestError = error;
+		_state = prError;
 	}
-    
-	SAFE_CALL(self.delegate, @selector(didCompleteWWORequest:), self);
 }
 
 #pragma mark -
@@ -617,10 +616,8 @@
 }
 
 - (void)requestFailed:(NSError*)error {
-	self.requestError = error;
-	state = prError;
-	
-	SAFE_CALL(self.delegate, @selector(didCompleteWWORequest:), self);
+	_requestError = error;
+	_state = prError;
 }
 
 @end

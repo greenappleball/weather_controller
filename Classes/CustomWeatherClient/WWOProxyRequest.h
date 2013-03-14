@@ -27,17 +27,17 @@ typedef enum {
 @protocol WWOProxyRequestDelegate;
 @interface WWOProxyRequest : NSObject
 
-@property (nonatomic, retain) NSString* language;
-@property (nonatomic, readwrite) float longitude;
-@property (nonatomic, readwrite) float latitude;
-@property (nonatomic, retain) NSString* search;
+@property (nonatomic, strong) NSString* language;
+@property (nonatomic, assign) float longitude;
+@property (nonatomic, assign) float latitude;
+@property (nonatomic, strong) NSString* search;
 
-@property (nonatomic, retain) id data;
+@property (nonatomic, readonly) id data;
 @property (nonatomic, readonly) WWOProxyRequestState state;
 @property (nonatomic, assign) WWOProxyRequestType type;
-@property (nonatomic, retain) NSError *requestError;
+@property (nonatomic, readonly) NSError *requestError;
 
-@property (nonatomic, assign) id <WWOProxyRequestDelegate> delegate;
+@property (nonatomic, weak) id <WWOProxyRequestDelegate> delegate;
 
 //
 // initialize request delegate with target and complete selector

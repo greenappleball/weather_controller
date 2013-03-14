@@ -12,7 +12,7 @@
 @protocol WWOProxyDelegate;
 @interface WWOProxy : NSObject
 
-@property (nonatomic, assign) id <WWOProxyDelegate> delegate;
+@property (nonatomic, weak) id <WWOProxyDelegate> delegate;
 
 + (NSDictionary*)iconsMapping;
 

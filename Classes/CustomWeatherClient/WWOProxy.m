@@ -12,10 +12,10 @@
 #import "CustomWeatherConts.h"
 
 @interface WWOProxy () <WWOProxyRequestDelegate>
-	
-@property (nonatomic, retain) NSString *language;
+
+@property (nonatomic, strong) NSString *language;
 @property (nonatomic, readonly) NSDictionary *iconsMapping;
-@property (nonatomic, retain) NSMutableArray *activeRequests;
+@property (nonatomic, strong) NSMutableArray *activeRequests;
 
 @end
 
@@ -166,8 +166,8 @@ static WWOProxy* sharedProxy;
         requestDelegate.longitude = aLongitude;
         requestDelegate.latitude = aLatitude;
         requestDelegate.language = self.language;
-        [self addRequest:requestDelegate];
         [requestDelegate getWeather];
+        [self addRequest:requestDelegate];
     }
 }
 
@@ -178,8 +178,8 @@ static WWOProxy* sharedProxy;
         WWOProxyRequest *requestDelegate = [[WWOProxyRequest alloc] initWithDelegate:self];
         requestDelegate.type = type;
         requestDelegate.language = self.language;
-        [self addRequest:requestDelegate];
         [requestDelegate searchCitiesByName:queryString];
+        [self addRequest:requestDelegate];
     }
 }
 

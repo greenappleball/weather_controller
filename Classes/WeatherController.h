@@ -27,17 +27,9 @@ typedef enum {
 @protocol WeatherControllerDelegate;
 @protocol BackPlaceViewControllerDelegate;
 
-@interface WeatherController : NSObject <CLLocationManagerDelegate, WWOProxyDelegate, WeatherControllerSettingsTableViewDelegate, SearchPlaceViewControllerDelegate> {
-	
-	int scheduledPlaceIdx;
-	
-	NSTimer *scheduledTimer;
-	
-	WeatherControllerSettingsTableView *settingsController;
-	SearchPlaceViewController *searchCotroller;
-}
+@interface WeatherController : NSObject <WWOProxyDelegate, WeatherControllerSettingsTableViewDelegate, SearchPlaceViewControllerDelegate>
 
-@property (nonatomic, strong) NSMutableDictionary *data;
+@property (nonatomic, readonly) NSMutableDictionary *data;
 @property (nonatomic, readwrite) int scheduledPlaceIdx;
 @property (nonatomic, weak) id <WeatherControllerDelegate> delegate;
 @property (nonatomic, weak) id <BackPlaceViewControllerDelegate> bpcDelegate;
