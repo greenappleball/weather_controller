@@ -109,7 +109,6 @@
 }
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
-	DLog(@"%@",searchText);
 	if ([self.delegate respondsToSelector:@selector(getPlacesByQuery:)]) {
 		[self.delegate getPlacesByQuery:searchText];
 	}

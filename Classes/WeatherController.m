@@ -85,9 +85,11 @@
 #pragma mark - Private
 
 - (void)saveToFile {
-    [self.weatherSettings setValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:kPlaceIdx];
-    [self.weatherSettings setValue:self.weatherCache forKey:kWeatherCache];
-    [self.weatherSettings writeToFile:[self dataFilePath] atomically:NO];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
+        [self.weatherSettings setValue:[NSNumber numberWithInt:scheduledPlaceIdx] forKey:kPlaceIdx];
+        [self.weatherSettings setValue:self.weatherCache forKey:kWeatherCache];
+        [self.weatherSettings writeToFile:[self dataFilePath] atomically:NO];
+    });
 }
 
 - (NSString*)dataFilePath {
@@ -156,28 +158,10 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (BOOL) canParseLocation:(CLLocation*)location{
-    BOOL canParse = YES;
-    if((fabs(location.coordinate.latitude) < 0.1) && (fabs(location.coordinate.longitude) < 0.1)) {
-        if ([self.bpcDelegate respondsToSelector:@selector(showCitySearch)]) {
-            [self.bpcDelegate showCitySearch];
-        }
-        canParse = NO;
-    }
-    return canParse;
-}
-
 - (void)parseGeocoderPlace:(MKPlacemark*)placemark error:(NSError*)error {
     NSDictionary *currentPlace;
     
     CLLocation* location = nil == placemark ? self.currentLocation : placemark.location;
-    
-    /*
-     // now we don't need this stack of code
-     if (![self canParseLocation:location]) {
-     return;
-     }
-     */
     
     BOOL isOk = (placemark != nil && error == nil);
     
@@ -422,8 +406,8 @@ static WeatherController *sharedController;
 	scheduledPlaceIdx = [self placeIdxInCache:aPlace];
 	if (scheduledPlaceIdx == NSNotFound) {
 		scheduledPlaceIdx = [self addPlaceToCache:aPlace];
-        [self saveToFile];
 	}
+    [self saveToFile];
     
 	[self startSchedulingWeather];
 }

@@ -10,13 +10,9 @@
 
 @protocol WeatherControllerSettingsTableViewDelegate;
 
-@interface WeatherControllerSettingsTableView : UITableViewController {
-	NSMutableArray *places;
-	id <WeatherControllerSettingsTableViewDelegate> delegate;
-	
-}
+@interface WeatherControllerSettingsTableView : UITableViewController
 
-@property(nonatomic, assign) id <WeatherControllerSettingsTableViewDelegate> delegate;
+@property(nonatomic, weak) id <WeatherControllerSettingsTableViewDelegate> delegate;
 @property(nonatomic, retain) NSMutableArray *places;
 
 @end

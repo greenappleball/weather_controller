@@ -11,8 +11,6 @@
 #import "SearchPlaceViewController.h"
 #import "TransparentToolbar.h"
 #import "CustomWeatherConts.h"
-#import "LifelikeClock2AppDelegate.h"
-#import "UIPopoverManager.h"
 
 #define NUMBER_SECTION 2
 #define AUTOMATIC_SECTION 0
@@ -23,13 +21,8 @@
 @synthesize delegate;
 
 - (void)setPlaces:(NSMutableArray *)thePlaces {
-	[places release];
-	places = [thePlaces retain];
+	_places = thePlaces;
 	[self.tableView reloadData];
-}
-
-- (NSMutableArray*)places {
-	return places;
 }
 
 #pragma mark -
@@ -81,16 +74,12 @@
 	[add setStyle:UIBarButtonItemStyleBordered];
 	[buttons addObject:add];
 	[buttons addObject:self.editButtonItem];
-	[add release];
 
 	// stick the buttons in the toolbar
 	[tools setItems:buttons animated:NO];
-	[buttons release];
 	UIBarButtonItem *buttonsBar = [[UIBarButtonItem alloc] initWithCustomView:tools];
-	[tools release];
 	// and put the toolbar in the nav bar
 	self.navigationItem.rightBarButtonItem = buttonsBar;
-	[buttonsBar release];
 		
 	//[self.navigationController.navigationBar pushNavigationItem:add animated:YES];
     //self.navigationItem.rightBarButtonItem = self.editButtonItem;
@@ -144,7 +133,7 @@
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     // Return the number of rows in the section.
-    return (section == AUTOMATIC_SECTION ? 1 : section == USER_SECTION ? [places count] : 0) ;
+    return (section == AUTOMATIC_SECTION ? 1 : section == USER_SECTION ? [_places count] : 0) ;
 }
 
 
@@ -155,7 +144,7 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
     switch (indexPath.section) {
 		case AUTOMATIC_SECTION:
@@ -167,7 +156,7 @@
 			}
 			break;
 		case USER_SECTION: {
-			NSDictionary *aPlace = [places objectAtIndex:indexPath.row];
+			NSDictionary *aPlace = [_places objectAtIndex:indexPath.row];
 			NSString *placeStr = [NSString stringWithFormat:@"%@, %@", [aPlace objectForKey:PLACE_KEY_COUNTRY], [aPlace objectForKey:PLACE_KEY_CITY]];
 			[cell.textLabel setText:placeStr];
 			if ([[WeatherController sharedController] scheduledPlaceIdx] == indexPath.row) {
@@ -203,8 +192,8 @@
     
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         // Delete the row from the data source
-		NSDictionary *removedPlace = [places objectAtIndex:indexPath.row];
-		[places removeObject:removedPlace];
+		NSDictionary *removedPlace = [_places objectAtIndex:indexPath.row];
+		[_places removeObject:removedPlace];
         [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:YES];
 		if ([delegate respondsToSelector:@selector(removePlace:)]) {
 			[delegate removePlace:removedPlace];
@@ -255,7 +244,7 @@
 			break;
 		case USER_SECTION:
 				if ([delegate respondsToSelector:@selector(setCurrentPlace:)]) {
-				[delegate setCurrentPlace:[places objectAtIndex:indexPath.row]];
+				[delegate setCurrentPlace:[_places objectAtIndex:indexPath.row]];
 			}
 			break;
 		default:
@@ -283,7 +272,6 @@
 
 - (void)dealloc {
 	self.places = nil;
-    [super dealloc];
 }
 
 - (void)searchNewPlace:(id)sender {

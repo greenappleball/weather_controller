@@ -177,3 +177,6 @@
 // (in meters)
 //
 #define DISTANCE_ACCURACY 20000.0f
+
+#define kPlaceIdx				@"placeIdx"
+#define kWeatherCache			@"weatherCache"
