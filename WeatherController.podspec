@@ -7,9 +7,11 @@ Pod::Spec.new do |s|
   s.homepage = ''
   s.author   = { '' => '' }
   s.source   = { :git => 'https://github.com/greenappleball/weather_controller.git', :tag => '0.0.1' }
-
   s.description = ''
 
+  s.dependency 'TBXML'
+  s.dependency 'AFNetworking'
+  
   s.source_files = 'Classes/**'
   s.resources    = 'Resources'/**
   s.preserve_paths = 'Resources'
