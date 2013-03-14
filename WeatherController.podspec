@@ -9,11 +9,11 @@ Pod::Spec.new do |s|
   s.source   = { :git => 'https://github.com/greenappleball/weather_controller.git', :tag => '0.0.1' }
   s.description = ''
 
-  s.preferred_dependency = 'Adding'
-  s.subspec 'Adding' do |a|
-    a.dependency 'TBXML'
-    a.dependency 'AFNetworking'
-  end
+#  s.preferred_dependency = 'Adding'
+#  s.subspec 'Adding' do |a|
+#    a.dependency 'TBXML'
+#    a.dependency 'AFNetworking'
+#  end
   
   s.source_files = 'Classes/**/*.*'
   s.resources    = 'Resources'/**/*.*
