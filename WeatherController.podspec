@@ -15,13 +15,14 @@ Pod::Spec.new do |s|
     a.requires_arc = false
   end
   
+  s.preferred_dependency = 'CustomWeatherClient'
   s.subspec 'CustomWeatherClient' do |c|
     c.source_files = 'Classes/CustomWeatherClient/**/*.*'
   end
   
   s.source_files = 'Classes/*.*'
   s.resources    = 'Resources/**/*.*'
-  s.preserve_paths = 'Resources', 'Classes/**'
+  s.preserve_paths = 'Resources', 'Classes'
   s.requires_arc = true
   s.frameworks   = 'QuartzCore', 'UIKit' , 'MapKit','Foundation', 'CoreLocation'
 
