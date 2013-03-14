@@ -10,8 +10,8 @@ Pod::Spec.new do |s|
 
   s.description = ''
 
-  s.source_files = 'Classes'
-  s.resources    = 'Resources'
+  s.source_files = 'Classes/**'
+  s.resources    = 'Resources'/**
   s.preserve_paths = 'Resources'
   s.requires_arc = true
   s.frameworks   = 'QuartzCore', 'UIKit' , 'MapKit','Foundation', 'CoreLocation'
