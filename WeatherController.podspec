@@ -21,7 +21,7 @@ Pod::Spec.new do |s|
   
   s.source_files = 'Classes/*.*'
   s.resources    = 'Resources/**/*.*'
-  s.preserve_paths = 'Resources'
+  s.preserve_paths = 'Resources', 'Classes/**'
   s.requires_arc = true
   s.frameworks   = 'QuartzCore', 'UIKit' , 'MapKit','Foundation', 'CoreLocation'
 
