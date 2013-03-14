@@ -15,10 +15,7 @@ Pod::Spec.new do |s|
   end
   
   s.subspec 'CustomWeatherClient' do |c|
-    a.source_files = 'Classes/CustomWeatherClient/**/*.*'
-  end
-
-  s.subspec 'Proxy' do |p|
+    c.source_files = 'Classes/CustomWeatherClient/**/*.*'
   end
   
   s.source_files = 'Classes/*.*'
